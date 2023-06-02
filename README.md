@@ -1,1 +1,1 @@
-# nodejs-express-on-aws-ec2
+# practice-aws-ec2-python-install
