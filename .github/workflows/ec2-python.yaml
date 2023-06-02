@@ -24,7 +24,7 @@ jobs:
       id: create_ec2
       run: |
         aws ec2 run-instances \
-          --image-id ami-0ab193018f3e9351b \
+          --image-id ami-0715c1897453cabd1 \
           --instance-type t2.micro \
           --key-name A4L \
           --security-group-ids sg-0841a9054b9f735cf	 \
