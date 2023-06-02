@@ -1,0 +1,55 @@
+name: EC2 Instance Creation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    
+    - name: Set up AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+    
+    - name: Create EC2 instance
+      id: create_ec2
+      run: |
+        aws ec2 run-instances \
+          --image-id ami-0ab193018f3e9351b \
+          --instance-type t2.micro \
+          --key-name A4L \
+          --security-group-ids sg-0841a9054b9f735cf	 \
+          --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=MyEC2Instance}]'
+    
+    - name: Wait for EC2 instance to start
+      id: wait_for_start
+      run: |
+        INSTANCE_ID=$(echo "${{ steps.create_ec2.outputs.run-instances }}")
+        aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+    
+    - name: Get EC2 instance IP address
+      id: get_ip_address
+      run: |
+        INSTANCE_ID=$(echo "${{ steps.create_ec2.outputs.run-instances }}")
+        aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[].Instances[].PublicIpAddress" --output text | awk '{print $1}'
+      env:
+        INSTANCE_ID: ${{ steps.create_ec2.outputs.run-instances }}
+    
+    - name: Install Python on EC2 instance
+      run: |
+        SSH_PRIVATE_KEY="${{ secrets.SSH_PRIVATE_KEY }}"
+        INSTANCE_IP="${{ steps.get_ip_address.outputs.stdout }}"
+        
+        echo "$SSH_PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ec2-user@$INSTANCE_IP "sudo yum update -y && sudo yum install -y python3"
