@@ -27,6 +27,7 @@ jobs:
           --image-id ami-0715c1897453cabd1 \
           --instance-type t2.micro \
           --key-name A4L \
+          --subnet-id subnet-00f9d48cda8ed4871 \
           --security-group-ids sg-0841a9054b9f735cf	 \
           --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=MyEC2Instance}]'
     
